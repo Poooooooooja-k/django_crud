@@ -5,43 +5,37 @@ from django.contrib.auth.models import User,auth
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
-# Create your views here.
-@cache_control(no_cache=True,must_revalidate=True,no_store=True)
+
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 @never_cache
 def signup(request):
     if 'username' in request.session:
         return redirect('home')
-    else:
-        if request.method=='POST':
-            first_name=request.POST.get('firstname')
-            last_name=request.POST.get('lastname')
-            username=request.POST.get('username')
-            email=request.POST.get('email')
-            password=request.POST.get('password')
-            confirm_password=request.POST.get('confirmpassword')
+    elif request.method == 'POST':
+        first_name = request.POST.get('firstname')
+        last_name = request.POST.get('lastname')
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirmpassword')
 
-            if not (username and email and password and confirm_password and first_name and last_name):
-                messages.info(request,'please fill the required fields!!!')
-            elif password!=confirm_password:
-                messages.info(request,'incorrect password!!!')
+        if not (username and email and password and confirm_password and first_name and last_name):
+            messages.error(request, 'Please fill all the required fields.')
+        elif password != confirm_password:
+            messages.error(request, 'Passwords do not match.')
+        else:
+            if User.objects.filter(username=username).exists():
+                messages.error(request, 'Username already taken.')
+            elif User.objects.filter(email=email).exists():
+                messages.error(request, 'Email already registered.')
             else:
-                if User.objects.filter(username=username).exists():
-                    messages.info(request,'Username alreadt taken!!')
-                    return redirect('signup')
-                elif User.objects.filter(email=email).exists():
-                    messages.info(request,'email already taken!!!')
-                    return redirect('signup')
-                else:
-                    user=User.objects.create_user(username=username,password=password,email=email,first_name=first_name,last_name=last_name)
-                    user.set_password(password)
-                    user.save()
-            return redirect('login')
-        
-
-                
+                user = User.objects.create_user(username=username, email=email, password=password, first_name=first_name, last_name=last_name)
+                user.save()
+                messages.success(request, 'Account created successfully. You can now log in.')
+                return redirect('login')
+    return render(request, 'signup.html')
 
 
-    return render(request,'signup.html')
 
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache
@@ -72,16 +66,24 @@ def login(request):
             return render(request,'login.html')
         
 
-
 def logout(request):
+    if 'username' in request.session:
+        del request.session['username']
+        auth.logout(request)
+        return redirect('login')
     
     return redirect('login')
 
+
+@login_required(login_url='login')
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 def home(request):
     return render(request,'home.html')
 
+
 def crudadmin(request):
     return render(request,'crudadmin.html')
+
 
 
 def dashboard(request):
