@@ -1,6 +1,6 @@
 from django.shortcuts import render,redirect
 from django.views.decorators.cache import cache_control,never_cache
-from django.contrib.auth import login,logout,authenticate
+from django.contrib.auth import login as auth_login ,logout,authenticate
 from django.contrib.auth.models import User,auth
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -18,6 +18,12 @@ def signup(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirmpassword')
+        print(first_name)
+        print(last_name)
+        print(username)
+        print(email)
+        print(password)
+        print(confirm_password)
 
         if not (username and email and password and confirm_password and first_name and last_name):
             messages.error(request, 'Please fill all the required fields.')
@@ -30,9 +36,10 @@ def signup(request):
                 messages.error(request, 'Email already registered.')
             else:
                 user = User.objects.create_user(username=username, email=email, password=password, first_name=first_name, last_name=last_name)
+                print(user)
                 user.save()
                 messages.success(request, 'Account created successfully. You can now log in.')
-                return redirect('login')
+            return redirect('login')
     return render(request, 'signup.html')
 
 
@@ -51,9 +58,10 @@ def login(request):
                 messages.error(request,'please enter your username and password')
                 return redirect('login')
             user=auth.authenticate(username=username,password=password)
+            print(user)
             if user is not None:
                 request.session['username']=username
-                login(request,user)
+                auth_login(request,user)
                 return redirect('home')
             else:
                 user_exists=User.objects.filter(username=username).exists()

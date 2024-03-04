@@ -4,7 +4,6 @@
   <head>
     <meta charset="UTF-8">
     <title>signup</title>
-    <link rel="stylesheet" href="style.css">
      <meta name="viewport" content="width=device-width, initial-scale=1.0">
      <style>
       @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
@@ -159,6 +158,11 @@ form .user-details .input-box{
   <div class="container">
     <div class="title">Registration</div>
     <div class="content">
+      <div>
+        {% for message in messages%}
+        <p>{{message}}</p>
+        {%endfor%}
+      </div>
       <form action="{% url 'signup' %}" method="post">
         {% csrf_token %}
         <div class="user-details">
@@ -191,7 +195,7 @@ form .user-details .input-box{
         </div>
        
         <div class="button">
-          <input type="submit" value="Register">
+          <input type="submit" value="signup">
         </div>
         <div class="button">
           Already have an account? <a href="{% url 'login' %}">Login here.</a>
