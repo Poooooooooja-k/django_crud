@@ -24,6 +24,12 @@ urlpatterns = [
     path('signup/',views.signup,name='signup'),
     path('home/',views.home,name='home'),
     path('logout/',views.logout,name='logout'),
-    
+    path('crudadmin/',views.crudadmin,name='crudadmin'),
+    path('dashboard/',views.dashboard,name='dashboard'),
+    path('add/',views.add,name='add'),
+    path('edit/',views.edit,name='edit'),
+    path('update/<int:id>/',views.update,name='update'),
+    path('delete/<int:id>/',views.delete,name='delete'),
+    path('search/',views.search,name='search'),
     
 ]

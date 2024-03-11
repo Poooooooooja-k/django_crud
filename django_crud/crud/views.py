@@ -79,7 +79,6 @@ def logout(request):
         del request.session['username']
         auth.logout(request)
         return redirect('login')
-    
     return redirect('login')
 
 
@@ -90,10 +89,97 @@ def home(request):
 
 
 def crudadmin(request):
+    if 'username' in request.session:
+        return redirect('home')
+    if 'crud' in request.session:
+        return redirect('dashboard')
+    else:
+        if request.method=='POST':
+            username=request.POST.get('username')
+            password=request.POST.get('password')
+            user=auth.authenticate(username=username,password=password)
+            if user is not None and user.is_superuser:
+                request.session['crud']=username
+                login(request,user)
+                return redirect('dashboard')
+            else:
+                messages.info(request,'invalid data')
     return render(request,'crudadmin.html')
 
 
 
+
+@login_required(login_url='crud')
+@login_required(login_url='login')
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
+@never_cache
 def dashboard(request):
+    if 'crud' in request.session:
+        users=User.objects.filter(is_staff=False)
+        context={
+            users:'users',
+        }
+        return render(request,'dashboard.html',context)
+    return redirect('dashboard')
+
+def add(request):
+    if request.method=='POST':
+        first_name = request.POST.get('firstname')
+        last_name = request.POST.get('lastname')
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+
+        user=User.objects.create_user(first_name=first_name,last_name=last_name,username=username,email=email,password=password)
+        return redirect('dashboard')
     return render(request,'dashboard.html')
 
+def edit(request,id):
+    des = des.objects.all()
+    context = {
+        'des' : des,
+    }
+    return render(request,'dashboard.html',context)
+
+def update(request,id):
+    user=User.objects.get(id=id)
+    if request.method=='POST':
+        name=request.POST.get('name')
+        email=request.POST.get('email')
+        password=request.POST.get('password')
+        first_name=request.POST.get('firstname')
+        last_name=request.POST.get('lastname')
+        user.username=name
+        user.email=email
+        user.password=password
+        user.first_name=first_name
+        user.last_name=last_name
+        if password:
+            user.set_password('password')
+        user.save()
+        return redirect('dashboard')
+    else:
+        context={
+            'user':user,
+        }
+    return render(request,'dashboard.html',context)
+
+def delete(request,id):
+    des = User.objects.filter(id=id)
+    des.delete()
+    context ={
+        'des':des,
+    }
+    return redirect(dashboard)
+
+def search(request):
+    query=request.GET.get('q')
+    if query:
+        results=User.objects.filter(username__icontains=query).exclude(username='admin')
+    else:
+        results=[]
+    context={
+        'results':results,
+    }
+    return render(request,'dashboard.html',context)
+def 
