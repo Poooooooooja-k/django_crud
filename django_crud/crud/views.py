@@ -182,4 +182,14 @@ def search(request):
         'results':results,
     }
     return render(request,'dashboard.html',context)
-def 
+
+
+@login_required(login_url='login')
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
+@never_cache
+
+def admin_logout(request):
+    if 'crud' in request.session:
+        del request.session['crud']
+        auth.logout(request)
+    return redirect('crud')
