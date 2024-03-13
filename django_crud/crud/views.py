@@ -4,7 +4,7 @@ from django.contrib.auth import login as auth_login ,logout,authenticate
 from django.contrib.auth.models import User,auth
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-
+from django.core.exceptions import ValidationError
 
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 @never_cache
@@ -32,14 +32,19 @@ def signup(request):
         else:
             if User.objects.filter(username=username).exists():
                 messages.error(request, 'Username already taken.')
+                return redirect('signup')
             elif User.objects.filter(email=email).exists():
                 messages.error(request, 'Email already registered.')
+                return redirect('signup')
             else:
-                user = User.objects.create_user(username=username, email=email, password=password, first_name=first_name, last_name=last_name)
-                print(user)
-                user.save()
-                messages.success(request, 'Account created successfully. You can now log in.')
-            return redirect('login')
+                try:
+                    user = User.objects.create_user(username, email=email, password=password, first_name=first_name, last_name=last_name)
+                    messages.success(request, 'Account created successfully. You can now log in.')
+                    return redirect('login')
+                except ValidationError as e:
+                    messages.error(request, e.message_dict)
+                    return redirect('signup')
+
     return render(request, 'signup.html')
 
 
@@ -53,12 +58,16 @@ def login(request):
         if request.method=='POST':
             username=request.POST.get('username')
             password=request.POST.get('password')
+            print(".......",username)
+        
 
             if not username and password:
                 messages.error(request,'please enter your username and password')
                 return redirect('login')
-            user=auth.authenticate(username=username,password=password)
-            print(user)
+            new = User.objects.get(email=username)
+            print("new:",new)
+            user=authenticate(request,username=new,password=password)
+            print("---",user)
             if user is not None:
                 request.session['username']=username
                 auth_login(request,user)
@@ -88,6 +97,9 @@ def home(request):
     return render(request,'home.html')
 
 
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
+@never_cache
 def crudadmin(request):
     if 'username' in request.session:
         return redirect('home')
@@ -95,12 +107,17 @@ def crudadmin(request):
         return redirect('dashboard')
     else:
         if request.method=='POST':
-            username=request.POST.get('username')
-            password=request.POST.get('password')
-            user=auth.authenticate(username=username,password=password)
+            uname=request.POST.get('username')
+            passw=request.POST.get('password')
+            print(uname,"-----")
+            print(passw,"-----")
+            new = User.objects.filter(email=uname).first()
+            print("new",new)
+            user=authenticate(request,username=new,password=passw)
+            print("user",user)
             if user is not None and user.is_superuser:
-                request.session['crud']=username
-                login(request,user)
+                request.session['crud']=uname
+                auth_login(request,user)
                 return redirect('dashboard')
             else:
                 messages.info(request,'invalid data')
@@ -131,6 +148,7 @@ def add(request):
         password = request.POST.get('password')
 
         user=User.objects.create_user(first_name=first_name,last_name=last_name,username=username,email=email,password=password)
+        user.save()
         return redirect('dashboard')
     return render(request,'dashboard.html')
 
